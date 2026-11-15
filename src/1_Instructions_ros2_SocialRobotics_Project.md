@@ -70,7 +70,8 @@ On the **Student PC**, add the following to `~/.bashrc`:
 ```bash
 source /opt/ros/humble/setup.bash
 source "$HOME/UR5e_social_robotics/install/setup.bash"
-export ROS_DOMAIN_ID=0
+# Student 1 uses 1; Student 2 uses 2; Student 3 uses 3; Student 4 uses 4.
+export ROS_DOMAIN_ID=1
 export ROS_LOCALHOST_ONLY=0
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ```
@@ -91,9 +92,10 @@ echo "$ROS_LOCALHOST_ONLY"
 echo "$RMW_IMPLEMENTATION"
 ```
 
-Expect `humble`, `0`, `0`, and `rmw_cyclonedds_cpp`. Domain `0` is the UR5e
-default for every student group. Temporary rUBot domains 1–4 are selected in
-container terminals before launching nodes, as described in
+Expect `humble`, the Student PC domain (`1`, `2`, `3` or `4`), `0`, and
+`rmw_cyclonedds_cpp`. In every Teacher container terminal, select the domain
+of the Student PC being tested before launching nodes. For example, to test
+Student 1: `ros2 daemon stop && export ROS_DOMAIN_ID=1`. Details are in the
 [Classroom architecture](../Documentation/2_UR5e_Classroom_Architecture.md).
 
 See `Documentation/1_UR5e_setup.md` for the complete installation, real-robot and optional HRI environment setup.
@@ -211,7 +213,9 @@ ros2 interface show ur5e_interfaces/srv/RunSequence
 
 The Teacher PC runs the sequence server, MoveIt 2 and the robot driver. The Student PC runs the Behavior Manager and command interface.
 
-Connect both computers to the classroom network. Use the student settings and Teacher Compose environment described in section 1.1, with matching domain `0` and remote discovery enabled.
+Connect both computers to the classroom network. Use the Student settings and
+Teacher Compose environment described in section 1.1, with the matching
+Student domain (`1`, `2`, `3` or `4`) and remote discovery enabled.
 
 The classroom network normally uses:
 

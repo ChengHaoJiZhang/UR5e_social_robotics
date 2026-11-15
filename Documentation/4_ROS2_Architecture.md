@@ -5,14 +5,15 @@ This document explains the architecture used in the second project session. For 
 ## ROS 2 classroom communication
 
 Follow [Classroom architecture](2_UR5e_Classroom_Architecture.md) for IPs, DDS
-checks and temporary domain changes. The default domain is `0`, independently
-of Student PC number. The Teacher container uses host networking and obtains
-ROS variables from Compose. Its [CycloneDDS XML](Files/Docker/cyclonedds_teacher.xml)
-selects `192.168.1.5`; students use CycloneDDS with multicast and domain `0`.
+checks and temporary domain changes. The Teacher container uses host networking
+and obtains ROS variables from Compose. Its [CycloneDDS multicast XML](Files/Docker/cyclonedds_teacher_multicast.xml)
+selects `192.168.1.5`; Student 1, 2, 3 and 4 use CycloneDDS domains `1`, `2`,
+`3` and `4`. The Teacher selects the domain of the one Student PC used in the
+session.
 
-To connect to a rUBot, temporarily export `ROS_DOMAIN_ID=1`, `2`, `3` or `4`
-in each participating container terminal before launching nodes, matching the
-rUBot. Return to `0` for the UR5e. Existing nodes must be restarted to change domain.
+To connect to a Student PC, temporarily export `ROS_DOMAIN_ID=1`, `2`, `3` or
+`4` in each participating Teacher container terminal before launching nodes,
+matching the Student PC. Existing nodes must be restarted to change domain.
 
 | Verification phase | Required components |
 |---|---|

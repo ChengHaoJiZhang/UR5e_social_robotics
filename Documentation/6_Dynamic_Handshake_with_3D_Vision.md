@@ -32,7 +32,7 @@ does not generate a YAML file. It moves the UR5e TCP only; this version does
 not command a gripper.
 
 Use [Classroom architecture](2_UR5e_Classroom_Architecture.md) for the network
-and default domain `0`. For this demonstration, run the camera, perception,
+and select the Student domain (`1`–`4`) in Teacher terminals. For this demonstration, run the camera, perception,
 HRI, interaction manager and robot services on the Teacher PC, inside its
 Humble container when using Docker. Students may inspect topics in the same
 domain. Stop the Python motion server before using the ROS 2 execution stack.

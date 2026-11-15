@@ -16,17 +16,16 @@ settings. Do not add conflicting ROS variable exports to the container's
 `.bashrc`. After changing Compose environment values, apply them with
 `docker compose up -d` and open new container terminals.
 
-For a temporary rUBot 2 session, run inside each participating container terminal:
+To connect to Student 2, run inside each participating Teacher container terminal:
 
 ```bash
 ros2 daemon stop
-export ROS_DOMAIN_ID=2  # choose 1, 2, 3 or 4 to match the rUBot
+export ROS_DOMAIN_ID=2  # choose 1, 2, 3 or 4 to match the selected Student PC
 ```
 
-Restart participating nodes after selecting the domain and match it on peers.
-Return to UR5e with `ros2 daemon stop` followed by `export ROS_DOMAIN_ID=0`.
-The override affects only that terminal and future child processes; new
-container terminals still use Compose default `0`.
+Restart participating nodes after selecting the domain and match it on the
+selected Student PC. The override affects only that terminal and future child
+processes; new container terminals still use Compose default `0`.
 
 ## Python environment with an Ubuntu 24.04 host
 

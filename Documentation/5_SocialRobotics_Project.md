@@ -13,7 +13,7 @@ Use equivalent poses in both implementations so that their communication and exe
 
 Before starting the practical sessions:
 
-1. read [Classroom architecture](2_UR5e_Classroom_Architecture.md) for shared networking and default domain `0`;
+1. read [Classroom architecture](2_UR5e_Classroom_Architecture.md) for shared networking and Student domains `1`–`4`;
 2. read [Python sockets architecture](3_Python_Sockets_Architecture.md);
 3. read [ROS 2 architecture](4_ROS2_Architecture.md);
 4. review the sessions, responsibilities and deliverables in this document.

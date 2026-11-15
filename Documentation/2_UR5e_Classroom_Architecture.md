@@ -59,32 +59,27 @@ system before switching.
 [Docker Compose](Files/Docker/docker-compose.yaml) supplies the Teacher container
 with `ROS_DOMAIN_ID=0`, `ROS_LOCALHOST_ONLY=0` and
 `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`, using host networking. The
-[teacher XML](Files/Docker/cyclonedds_teacher.xml) selects classroom interface
-`192.168.1.5` with multicast enabled. Students use CycloneDDS and domain `0`;
-no student XML is required for the intended setup. Verify discovery on the
-actual classroom network.
+[teacher multicast XML](Files/Docker/cyclonedds_teacher_multicast.xml) selects
+classroom interface `192.168.1.5` with multicast enabled. Student 1, 2, 3 and
+4 use domains `1`, `2`, `3` and `4` respectively. The Teacher selects the
+domain of exactly one Student PC before it starts ROS nodes, so the other
+Student PCs do not discover the Teacher nodes. Verify discovery on the actual
+classroom network.
 
-The UR5e default domain is `0`, independently of the Student PC number. To
-connect to rUBot 1, 2, 3 or 4, change the domain **inside the container terminal**
-before starting nodes. For example, for rUBot 2:
+To connect the Teacher to Student 2, change the domain **inside every Teacher
+container terminal** before starting nodes:
 
 ```bash
 ros2 daemon stop
-export ROS_DOMAIN_ID=2  # choose 1, 2, 3 or 4 to match the rUBot
+export ROS_DOMAIN_ID=2  # choose 1, 2, 3 or 4 to match the selected Student PC
 ```
 
 Repeat the export in every participating terminal; restart any nodes that must
-join the new domain. The rUBot and other participating computers must match.
-An export affects only that shell and future child processes, not running
-nodes, other terminals or Compose. New container terminals retain default `0`.
-Return to the UR5e session with:
-
-```bash
-ros2 daemon stop
-export ROS_DOMAIN_ID=0
-```
-
-Do not add permanent domain overrides to the Teacher container's `.bashrc`.
+join the new domain. The selected Student and Teacher must match. An export
+affects only that shell and future child processes, not running nodes, other
+terminals or Compose. New container terminals retain the Compose base value
+`0`. Do not add a permanent Student domain override to the Teacher container's
+`.bashrc`.
 
 ### Verify communication before motion
 
@@ -299,6 +294,8 @@ This progression introduces networking, modular software, ROS 2 nodes, services,
 
 ## Related documents
 
+- [Classroom DDS network test](Files/Docker/Classroom_DDS_Network_Test.md): multicast,
+  unicast, fake-hardware and real-robot verification sequence.
 - [UR5e setup](1_UR5e_setup.md): operating-system, driver, network, and robot setup.
 - [Python sockets architecture](3_Python_Sockets_Architecture.md): components, TCP communication, YAML and URScript flow.
 - [ROS 2 architecture](4_ROS2_Architecture.md): nodes, topics, services, actions and sequence execution.
