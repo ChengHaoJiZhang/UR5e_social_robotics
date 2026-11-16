@@ -105,8 +105,8 @@ There must be no old `CYCLONEDDS_URI` export later in `.bashrc`.
 ```bash
 # ROS 2 classroom: multicast
 source /opt/ros/humble/setup.bash
-if [ -f "$HOME/UR5e_social_robotics/install/setup.bash" ]; then
-    source "$HOME/UR5e_social_robotics/install/setup.bash"
+if [ -f "$HOME/Desktop/UR5e_social_robotics/install/setup.bash" ]; then
+    source "$HOME/Desktop/UR5e_social_robotics/install/setup.bash"
 fi
 # Student 1: 1; Student 2: 2; Student 3: 3; Student 4: 4.
 export ROS_DOMAIN_ID=1
@@ -131,13 +131,18 @@ already sets the required variables and mounts:
 CYCLONEDDS_URI=file:///root/UR5e_social_robotics/Documentation/Files/Docker/cyclonedds_teacher_multicast.xml
 ```
 
-Therefore do **not** add a competing `CYCLONEDDS_URI` value to the container
-`.bashrc`. After changing `docker-compose.yaml` or the XML, recreate the
-container from `Documentation/Files/Docker/`:
+Therefore ensure that `.bashrc` contains:
 
 ```bash
-docker compose up -d --force-recreate
-docker exec -it pc_humble_ur5e bash
+# ROS 2 classroom: multicast
+source /opt/ros/humble/setup.bash
+if [ -f "$HOME/UR5e_social_robotics/install/setup.bash" ]; then
+    source "$HOME/UR5e_social_robotics/install/setup.bash"
+fi
+# Student 1: 1; Student 2: 2; Student 3: 3; Student 4: 4.
+export ROS_DOMAIN_ID=1
+export ROS_LOCALHOST_ONLY=0
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ```
 
 Inside the container, verify:
@@ -148,16 +153,8 @@ echo "$ROS_DOMAIN_ID"
 echo "$RMW_IMPLEMENTATION"
 ```
 
-Before every Teacher-side command, select the Student PC to test. For Student
-1, run this in **each Teacher container terminal** before starting ROS nodes:
+We have selected the PC student we will connect to, in this case PC student 1
 
-```bash
-ros2 daemon stop
-export ROS_DOMAIN_ID=1
-```
-
-Use `2`, `3`, or `4` for the other Student PCs. This is a temporary shell
-setting; it deliberately overrides Compose's base domain `0`.
 
 ### 3.3 Prove data exchange with `demo_nodes_cpp`
 
