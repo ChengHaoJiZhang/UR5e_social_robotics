@@ -2,9 +2,7 @@
 
 ## Project introduction
 
-This project is about designing a social movement for a robot arm and learning how software sends that movement to a robot.
-
-The robot is a **UR5e collaborative robot arm**. Example behaviours are waving, giving five, pointing, and offering a handshake.
+This project is about designing a social movement for a UR5e collaborative robot arm and learning how software sends that movement to a robot. Examples are waving, giving five, pointing, and offering a handshake.
 
 The goal is not only to make the arm move. The movement must have a clear meaning, work in simulation, and be checked for safety.
 
@@ -12,36 +10,33 @@ The goal is not only to make the arm move. The movement must have a clear meanin
 
 - How to describe a robot movement as a sequence of steps.
 - How to use YAML files to store movement data.
-- How software on one computer can request a robot behaviour.
+- How software can request a robot behaviour.
 - How to test a movement in simulation before using a real robot.
-- How Python sockets and ROS 2 solve similar communication problems in different ways.
-
-## How does a behaviour reach the robot?
-
-```text
-Student computer
-      │ requests a behaviour
-      ▼
-Teacher computer
-      │ checks and runs the approved movement
-      ▼
-Simulation first, then the real UR5e only with teacher approval
-```
-
-In the classroom, students do not connect directly to the real UR5e. The teacher computer manages access to the robot and supervises any real movement.
+- How Python sockets and ROS 2 solve similar communication problems.
 
 ## Two ways to build the project
 
-We will implement a similar social behaviour using two architectures:
+| Project stage | Student request | Simulation and execution |
+| --- | --- | --- |
+| Python sockets | The client sends the complete YAML sequence to a TCP server. | RoboDK, then the real UR5e only with approval. |
+| ROS 2 | The student publishes a behaviour name. The server loads the matching YAML file. | Fake UR5e with MoveIt 2, then the real UR5e only with approval. |
 
-| Project stage  | Student request                                                                  | Simulation and execution                                        |
-| -------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Python sockets | The client sends the complete YAML sequence to a TCP server.                     | RoboDK, then the real UR5e only with approval.                  |
-| ROS 2          | The student publishes a behaviour name. The server loads the matching YAML file. | Fake UR5e with MoveIt 2, then the real UR5e only with approval. |
+The ROS 2 handshake example has five steps: start pose, approach, handshake pose, retreat, and return to start. It moves to a fixed pose; it does not detect or follow a person's hand.
 
-The two YAML files may describe similar poses, but their formats and execution methods are different.
+## Laboratory architecture
 
-In ROS 2, a **topic** carries the requested behaviour name. A **service** asks the server to run that behaviour. The server finds the YAML file and starts the sequence.
+The laboratory has four student PCs acting as clients and one teacher PC acting as the server. Only the teacher PC is connected to the UR5e.
+
+```text
+Student PC 1 (client) --+
+Student PC 2 (client) --+
+Student PC 3 (client) --+--> Teacher PC (server) --> UR5e
+Student PC 4 (client) --+        |                    real hardware
+                                  v
+                           RoboDK or MoveIt 2 / RViz
+```
+
+In the classroom, the teacher PC receives the request, validates and runs the approved motion. Students never connect directly to the physical UR5e. For the **previous activities below**, this architecture is simplified: the client and server run on the same student PC so that each student can test safely in simulation before the laboratory session.
 
 ## From an idea to a tested movement
 
@@ -52,8 +47,6 @@ In ROS 2, a **topic** carries the requested behaviour name. A **service** asks t
 5. Check the motion and fix problems.
 6. Ask the teacher to review it before any real-robot test.
 
-The ROS 2 handshake example already in the repository has five steps: start pose, approach, handshake pose, retreat, and return to the start pose. It moves to a fixed pose; it does not detect or follow a person's hand.
-
 ## What will you submit?
 
 1. A Python sockets YAML file.
@@ -63,13 +56,7 @@ The ROS 2 handshake example already in the repository has five steps: start pose
 5. Evidence of a supervised real-robot test, **if the teacher approves one**.
 6. A short comparison of the two architectures.
 
-In the comparison, explain:
-
-- What the student computer sends in each version.
-- Where the server finds the YAML file.
-- How the teacher computer manages robot access.
-- How the software reports success or errors.
-- What ROS 2 provides compared with the custom TCP protocol.
+In the comparison, explain what the student sends in each version, where the server finds the YAML file, how access to the real robot is managed, how success or errors are reported, and what ROS 2 provides compared with the custom TCP protocol.
 
 ## Safety comes first
 
@@ -78,160 +65,261 @@ In the comparison, explain:
 - Check the start, middle, and end poses.
 - Never run an unapproved movement on the real UR5e.
 - A real-robot test needs teacher approval and supervision.
-- Voice and face recognition are not safety systems.
 
 The ROS 2 pose sequence uses inverse kinematics to find joint targets. A successful IK result does not by itself prove that the full path is collision-free.
 
-## Suggested timing for the introduction
+# Guided practical activity: previous simulation before each session
 
-| Time       | Topic                                                     |
-| ---------- | --------------------------------------------------------- |
-| 0–3 min   | The project challenge and social behaviours               |
-| 3–8 min   | What students will learn                                  |
-| 8–14 min  | The two architectures and how a request reaches the robot |
-| 14–20 min | Design, simulation, and safety                            |
-| 20–25 min | Final deliverables                                        |
-| 25–30 min | Fork and clone check                                      |
+Complete the corresponding activity **before** the classroom session. Fork the repository first, use your personal clone, and run the client and server on **one computer only**. These are simulation exercises: do not connect to a real UR5e.
 
-The guided handshake simulation below is a separate practical activity. It may take **30–45 minutes**, depending on how the classroom environment has been prepared.
+In both sessions, first verify the supplied `handshake` and `give5` motions. Then recover the social motion that you designed in the first laboratory session of the course and translate it into a new YAML file in the relevant `motions/` folder, following the supplied examples. Finally, verify your own motion in simulation.
 
-# Guided practical activity: fork, clone, and simulate a handshake
+In the laboratory, the same order is used: first simulate the approved motion with the student PC as client and the teacher PC as server; only after that simulation succeeds may the teacher supervise a real-UR5e test.
 
-## Before the activity
+For these sessions, motions are requested only through the command parameter (Python sockets) or the ROS 2 topic. Voice and face control are outside the activity scope and may be shown only as a later demonstration.
 
-The teacher should prepare a The Construct environment that:
+## Common step - fork and clone your personal copy
 
-- runs **Ubuntu 22.04 and ROS 2 Humble**;
-- has the project's ROS 2 dependencies installed and can build the workspace;
-- includes the UR driver and MoveIt 2;
-- supports a graphical view such as RViz, so students can see the fake robot move.
+1. Open the [project repository on GitHub](https://github.com/manelpuig/UR5e_social_robotics), sign in, and select **Fork**.
+2. Replace `GITHUB_USERNAME` below with your GitHub username.
+3. After cloning, run `git remote -v`. The `origin` URL must contain your GitHub username.
 
-The activity uses **fake hardware only**. If the correct ROS 2 packages or a graphical view are not available, stop and ask the teacher to prepare the environment. Do not switch to a real robot.
+## Session 1 - Windows, VS Code, Python sockets and RoboDK
 
-Students need a GitHub account and access to The Construct.
+### Goal and requirements
 
-## Part 1 — Create a personal fork and clone it
+Before Session 1, simulate `handshake` locally. The Python TCP server and client run in separate VS Code PowerShell terminals on the same Windows computer. RoboDK is the simulator.
 
-1. Open the [project repository on GitHub](https://github.com/manelpuig/UR5e_social_robotics).
-2. Sign in to GitHub and select **Fork**. Create the fork in your own account.
-3. Open the prepared ROS 2 Humble environment in The Construct and open a terminal.
-4. Replace `GITHUB_USERNAME` with your GitHub username, then clone your fork:
+You need Windows, VS Code, Git, the Python launcher with **Python 3.10**, RoboDK, and a GitHub account. The classroom PCs already have the remaining software; install only PyYAML on your own PC.
 
-   ```bash
-   git clone https://github.com/GITHUB_USERNAME/UR5e_social_robotics.git
-   cd UR5e_social_robotics
-   ```
-5. Check that the clone points to your fork:
+### 1. Clone and open the project
 
-   ```bash
-   git remote -v
-   git status
-   ```
+In PowerShell (VS Code integrated terminal or Windows Terminal), run:
 
-   The URL shown by `git remote -v` should contain your GitHub username.
-6. Show the teacher your GitHub fork and the `git remote -v` output.
-
-## Part 2 — Build the ROS 2 workspace
-
-The project setup uses a virtual environment named `.venv-humble`. The classroom image should have it prepared before this activity.
-
-From the repository folder, build the workspace:
-
-```bash
-source /opt/ros/humble/setup.bash
-cd ~/UR5e_social_robotics
-source .venv-humble/bin/activate
-.venv-humble/bin/python /usr/bin/colcon build \
-  --symlink-install \
-  --base-paths src
-source install/setup.bash
+```powershell
+cd $HOME
+git clone https://github.com/GITHUB_USERNAME/UR5e_social_robotics.git
+cd UR5e_social_robotics
+code .
+git remote -v
 ```
 
-Check that this is a Humble environment:
+### 2. Install PyYAML
+
+In the VS Code terminal:
+
+```powershell
+py -3.10 -m pip install PyYAML
+```
+
+No virtual environment, voice-control setup, or face-control setup is needed for these sessions.
+
+### 3. Configure one-computer simulation
+
+Open `Python_sockets_Robotic_project/config.py` and set:
+
+```python
+SERVER_IP = "127.0.0.1"
+EXECUTION_MODE = "simulation_only"
+```
+
+`127.0.0.1` is the same computer. `simulation_only` prevents any real-robot connection.
+
+### 4. Verify the examples and create your motion
+
+Open two VS Code PowerShell terminals and change to the project folder in both:
+
+```powershell
+cd $HOME\UR5e_social_robotics\Python_sockets_Robotic_project
+```
+
+**Terminal 1 - server**
+
+```powershell
+py -3.10 ur5e_motion_server.py
+```
+
+RoboDK should open and the terminal should report that it is listening on port `5000`. Keep it running.
+
+**Terminal 2 - client**
+
+```powershell
+py -3.10 motion_client.py --list
+py -3.10 motion_client.py handshake
+py -3.10 motion_client.py give5
+```
+
+The server must receive each YAML, RoboDK must show each complete motion, and the client must print `OK: sequence executed`.
+
+Next, create `motions/<motion_name>.yaml` from `motions/handshake.yaml` or `motions/give5.yaml`. It must represent the social motion you designed in the first laboratory session. Register the same lowercase name in `MOTIONS` in `behavior_manager_client.py`, for example:
+
+```python
+MOTIONS = {
+    "handshake": "motions/handshake.yaml",
+    "give5": "motions/give5.yaml",
+    "wave": "motions/wave.yaml",
+}
+```
+
+Then simulate your own motion:
+
+```powershell
+py -3.10 motion_client.py wave
+```
+
+Replace `wave` with your own name. Stop the server with `Ctrl+C` when finished.
+
+### Evidence for Session 1
+
+- [ ] `git remote -v` shows my fork.
+- [ ] `SERVER_IP` is `127.0.0.1` and `EXECUTION_MODE` is `simulation_only`.
+- [ ] I verified `handshake` and `give5` in RoboDK.
+- [ ] I created and simulated my own social-motion YAML.
+- [ ] I have a screenshot or terminal output showing `OK: sequence executed` and the RoboDK simulation.
+
+## Session 2 - Ubuntu 22.04, VS Code and ROS 2 Humble
+
+### Goal and requirements
+
+Before Session 2, simulate the same `handshake` movement locally with ROS 2, the fake UR5e driver, MoveIt 2, and RViz. All five ROS 2 processes run on the same Ubuntu computer.
+
+You need Ubuntu 22.04, VS Code, Git, and **ROS 2 Humble**. Work in The Construct for this activity. Each time you enter its environment, run:
 
 ```bash
+sudo apt update
+sudo apt install ros-humble-ur
+```
+
+### 1. Clone and open the project
+
+In a terminal, run:
+
+```bash
+cd ~
+git clone https://github.com/GITHUB_USERNAME/UR5e_social_robotics.git
+cd ~/UR5e_social_robotics
+code .
+git remote -v
+```
+
+### 2. Review `~/.bashrc`
+
+Open it with `code ~/.bashrc` and add these lines at the end. Do not add duplicates if they already exist:
+
+```bash
+# ROS 2 Humble and this local workspace
+source /opt/ros/humble/setup.bash
+source "$HOME/UR5e_social_robotics/install/setup.bash"
+
+# Local, one-computer simulation
+export ROS_DOMAIN_ID=0
+export ROS_LOCALHOST_ONLY=1
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+```
+
+For this local activity, `ROS_LOCALHOST_ONLY=1` keeps ROS 2 communication on this computer. The distributed classroom exercise may require different values; change them only when the teacher asks you to.
+
+Apply and verify the configuration:
+
+```bash
+source ~/.bashrc
 echo "$ROS_DISTRO"
+echo "$ROS_DOMAIN_ID"
+echo "$ROS_LOCALHOST_ONLY"
+echo "$RMW_IMPLEMENTATION"
 ```
 
-It should print `humble`. If the build fails, stop and ask the teacher to check the environment before continuing.
+Expected values: `humble`, `0`, `1`, and `rmw_cyclonedds_cpp`.
 
-## Part 3 — Start the fake UR5e and the project nodes
+### 3. Build the workspace
 
-Open **five terminals** in The Construct. In each terminal, prepare the project environment:
+In the VS Code integrated terminal:
 
 ```bash
-source /opt/ros/humble/setup.bash
 cd ~/UR5e_social_robotics
-source .venv-humble/bin/activate
+source /opt/ros/humble/setup.bash
+colcon build --symlink-install
 source install/setup.bash
 ```
 
-### Terminal 1 — Start the fake robot driver
+If the build fails, save the error and ask the teacher to check the Ubuntu/ROS 2 installation before continuing.
+
+### 4. Verify the examples and create your motion
+
+Open **five VS Code terminals**. In each, run `source ~/.bashrc` (or open a new terminal after editing `.bashrc`). Then start one process in each terminal.
+
+**Terminal 1 - fake UR5e driver**
 
 ```bash
 ros2 launch ur_robot_driver ur_control.launch.py \
-  ur_type:=ur5e \
-  robot_ip:=192.168.0.20 \
-  use_fake_hardware:=true \
-  launch_rviz:=false
+  ur_type:=ur5e robot_ip:=192.168.0.20 \
+  use_fake_hardware:=true launch_rviz:=false
 ```
 
-`use_fake_hardware:=true` is essential. This starts simulated hardware and does not connect to a physical UR5e. Keep the terminal running.
-
-### Terminal 2 — Start MoveIt 2 and RViz
+**Terminal 2 - MoveIt 2 and RViz**
 
 ```bash
 ros2 launch ur_moveit_config ur_moveit.launch.py \
-  ur_type:=ur5e \
-  launch_rviz:=true
+  ur_type:=ur5e launch_rviz:=true
 ```
 
-Wait until the UR5e model appears and MoveIt 2 is ready.
+Wait until RViz displays the robot and MoveIt 2 is ready.
 
-### Terminal 3 — Start the sequence server
+**Terminal 3 - sequence server**
 
 ```bash
 ros2 run ur5e_motion_server ur5e_sequence_server
 ```
 
-Look for a message that says the sequence server is ready and check that its motion directory contains `handshake.yaml`.
-
-### Terminal 4 — Start the behaviour client
+**Terminal 4 - behaviour manager client**
 
 ```bash
 ros2 launch social_robot_behaviors social_behavior.launch.py
 ```
 
-Keep the terminal running.
-
-### Terminal 5 — Request the handshake
+**Terminal 5 - example requests**
 
 ```bash
 ros2 topic pub --once /social_behavior std_msgs/msg/String \
   "{data: 'handshake'}"
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: 'give5'}"
 ```
 
-## What should happen?
+Both supplied motions must run in RViz. Next, create `src/social_robot_behaviors/motions/<motion_name>.yaml` by copying the structure of `handshake.yaml` or `give5.yaml` and translating the social motion from the first laboratory session. For example:
 
-The fake UR5e should perform the sequence shown in [`handshake.yaml`](../src/social_robot_behaviors/motions/handshake.yaml):
+```bash
+cd ~/UR5e_social_robotics/src/social_robot_behaviors/motions
+cp handshake.yaml wave.yaml
+code wave.yaml
+cd ~/UR5e_social_robotics
+colcon build --symlink-install
+source install/setup.bash
+```
 
-1. Move to the starting pose.
-2. Move to the handshake approach pose.
-3. Move to the handshake pose.
-4. Retreat to the approach pose.
-5. Return to the starting pose.
+No Python registration is needed for ROS 2: the requested behaviour name must match the YAML filename without `.yaml`. In Terminal 5, send your motion:
 
-Watch the robot in RViz and check the terminal output for errors. The sequence represents a handshake movement, but it does not detect a person, make physical contact, or control a gripper.
+```bash
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: 'wave'}"
+```
 
-If the motion fails, do not try it on a real robot. Save the error message and ask the teacher for help. Stop the ROS 2 nodes with `Ctrl+C` when the test is finished.
+Replace `wave` with your own name.
 
-## Quick check before leaving
+### What should happen?
 
-- [ ] I created a fork in my GitHub account.
-- [ ] I cloned my fork in The Construct.
+The fake UR5e should run `handshake`, `give5`, and your own social motion in RViz. Check terminal messages and verify that your motion starts, moves, and ends safely. `use_fake_hardware:=true` is essential: no physical UR5e is used.
+
+If a node cannot find the others, run `source ~/.bashrc` in that terminal and check that all five terminals have the same values for `ROS_DOMAIN_ID`, `ROS_LOCALHOST_ONLY`, and `RMW_IMPLEMENTATION`. Stop all nodes with `Ctrl+C` when finished.
+
+### Evidence for Session 2
+
 - [ ] `git remote -v` shows my fork.
-- [ ] I used fake hardware.
-- [ ] I saw the handshake sequence in RViz or recorded the error for the teacher.
+- [ ] My `.bashrc` contains the reviewed ROS 2 and workspace setup.
+- [ ] The workspace builds successfully.
+- [ ] I verified `handshake` and `give5` in RViz.
+- [ ] I created and simulated my own social-motion YAML.
+- [ ] I have a screenshot of my motion in RViz or the error output to discuss in Session 2.
 
 ## More information
 
