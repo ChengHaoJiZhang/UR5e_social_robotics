@@ -402,15 +402,3 @@ Before connecting the Behavior Manager or robot, verify with `ros2 topic echo /s
 - a non-matching face, missing image or unavailable camera publishes no motion.
 
 Repeat the complete chain with fake hardware. Face matching is a classroom demonstration, not secure biometric authentication or a robot safety system.
-
-## Final safety checklist
-
-Before a real execution, confirm:
-
-- [ ] the YAML was tested completely with fake hardware;
-- [ ] all IK and trajectory steps completed without errors;
-- [ ] initial, intermediate and final poses are safe;
-- [ ] the installed YAML on the Teacher PC is the approved version;
-- [ ] TCP, payload and External Control are configured correctly;
-- [ ] the workspace is clear and robot speed is reduced;
-- [ ] the instructor is supervising and the emergency stop is accessible.

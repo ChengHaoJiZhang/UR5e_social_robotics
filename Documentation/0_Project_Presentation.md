@@ -21,7 +21,9 @@ The goal is not only to make the arm move. The movement must have a clear meanin
 | Python sockets | The client sends the complete YAML sequence to a TCP server. | RoboDK, then the real UR5e only with approval. |
 | ROS 2 | The student publishes a behaviour name. The server loads the matching YAML file. | Fake UR5e with MoveIt 2, then the real UR5e only with approval. |
 
-The ROS 2 handshake example has five steps: start pose, approach, handshake pose, retreat, and return to start. It moves to a fixed pose; it does not detect or follow a person's hand.
+The ROS 2 handshake example has five steps: init pose, approach handshake pose, handshake pose, approach handshake pose, and return to init pose. 
+
+It moves to a fixed pose; it does not detect or follow a person's hand.
 
 ## Laboratory architecture
 
@@ -30,8 +32,8 @@ The laboratory has four student PCs acting as clients and one teacher PC acting 
 ```text
 Student PC 1 (client) --+
 Student PC 2 (client) --+
-Student PC 3 (client) --+--> Teacher PC (server) --> UR5e
-Student PC 4 (client) --+        |                    real hardware
+Student PC 3 (client) --+ --> Teacher PC (server) --> UR5e
+Student PC 4 (client) --+         |                    real hardware
                                   v
                            RoboDK or MoveIt 2 / RViz
 ```
@@ -82,7 +84,6 @@ For these sessions, motions are requested only through the command parameter (Py
 
 1. Open the [project repository on GitHub](https://github.com/manelpuig/UR5e_social_robotics), sign in, and select **Fork**.
 2. Replace `GITHUB_USERNAME` below with your GitHub username.
-3. After cloning, run `git remote -v`. The `origin` URL must contain your GitHub username.
 
 ## Session 1 - Windows, VS Code, Python sockets and RoboDK
 
@@ -100,8 +101,6 @@ In PowerShell (VS Code integrated terminal or Windows Terminal), run:
 cd $HOME
 git clone https://github.com/GITHUB_USERNAME/UR5e_social_robotics.git
 cd UR5e_social_robotics
-code .
-git remote -v
 ```
 
 ### 2. Install PyYAML
@@ -109,7 +108,7 @@ git remote -v
 In the VS Code terminal:
 
 ```powershell
-py -3.10 -m pip install PyYAML
+py -3.11 -m pip install PyYAML
 ```
 
 No virtual environment, voice-control setup, or face-control setup is needed for these sessions.
@@ -136,7 +135,7 @@ cd $HOME\UR5e_social_robotics\Python_sockets_Robotic_project
 **Terminal 1 - server**
 
 ```powershell
-py -3.10 ur5e_motion_server.py
+py -3.11 ur5e_motion_server.py
 ```
 
 RoboDK should open and the terminal should report that it is listening on port `5000`. Keep it running.
@@ -144,12 +143,14 @@ RoboDK should open and the terminal should report that it is listening on port `
 **Terminal 2 - client**
 
 ```powershell
-py -3.10 motion_client.py --list
-py -3.10 motion_client.py handshake
-py -3.10 motion_client.py give5
+py -3.11 motion_client.py --list
+py -3.11 motion_client.py handshake
+py -3.11 motion_client.py give5
 ```
 
 The server must receive each YAML, RoboDK must show each complete motion, and the client must print `OK: sequence executed`.
+
+![](./Images/Presentation/simulation_win_python.png) 
 
 Next, create `motions/<motion_name>.yaml` from `motions/handshake.yaml` or `motions/give5.yaml`. It must represent the social motion you designed in the first laboratory session. Register the same lowercase name in `MOTIONS` in `behavior_manager_client.py`, for example:
 
@@ -164,18 +165,11 @@ MOTIONS = {
 Then simulate your own motion:
 
 ```powershell
-py -3.10 motion_client.py wave
+py -3.11 motion_client.py wave
 ```
 
 Replace `wave` with your own name. Stop the server with `Ctrl+C` when finished.
 
-### Evidence for Session 1
-
-- [ ] `git remote -v` shows my fork.
-- [ ] `SERVER_IP` is `127.0.0.1` and `EXECUTION_MODE` is `simulation_only`.
-- [ ] I verified `handshake` and `give5` in RoboDK.
-- [ ] I created and simulated my own social-motion YAML.
-- [ ] I have a screenshot or terminal output showing `OK: sequence executed` and the RoboDK simulation.
 
 ## Session 2 - Ubuntu 22.04, VS Code and ROS 2 Humble
 
@@ -183,7 +177,7 @@ Replace `wave` with your own name. Stop the server with `Ctrl+C` when finished.
 
 Before Session 2, simulate the same `handshake` movement locally with ROS 2, the fake UR5e driver, MoveIt 2, and RViz. All five ROS 2 processes run on the same Ubuntu computer.
 
-You need Ubuntu 22.04, VS Code, Git, and **ROS 2 Humble**. Work in The Construct for this activity. Each time you enter its environment, run:
+You need Ubuntu 22.04, VS Code, Git, and **ROS 2 Humble**. Work in TheConstruct environment for this activity. Each time you enter its environment, run:
 
 ```bash
 sudo apt update
@@ -198,8 +192,6 @@ In a terminal, run:
 cd ~
 git clone https://github.com/GITHUB_USERNAME/UR5e_social_robotics.git
 cd ~/UR5e_social_robotics
-code .
-git remote -v
 ```
 
 ### 2. Review `~/.bashrc`
@@ -213,23 +205,11 @@ source "$HOME/UR5e_social_robotics/install/setup.bash"
 
 # Local, one-computer simulation
 export ROS_DOMAIN_ID=0
-export ROS_LOCALHOST_ONLY=1
+export ROS_LOCALHOST_ONLY=0
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ```
 
-For this local activity, `ROS_LOCALHOST_ONLY=1` keeps ROS 2 communication on this computer. The distributed classroom exercise may require different values; change them only when the teacher asks you to.
-
-Apply and verify the configuration:
-
-```bash
-source ~/.bashrc
-echo "$ROS_DISTRO"
-echo "$ROS_DOMAIN_ID"
-echo "$ROS_LOCALHOST_ONLY"
-echo "$RMW_IMPLEMENTATION"
-```
-
-Expected values: `humble`, `0`, `1`, and `rmw_cyclonedds_cpp`.
+For this local activity, `ROS_LOCALHOST_ONLY=0` enables ROS 2 communication on this computer and others in the network. 
 
 ### 3. Build the workspace
 
@@ -238,7 +218,7 @@ In the VS Code integrated terminal:
 ```bash
 cd ~/UR5e_social_robotics
 source /opt/ros/humble/setup.bash
-colcon build --symlink-install
+colcon build
 source install/setup.bash
 ```
 
@@ -286,14 +266,19 @@ ros2 topic pub --once /social_behavior std_msgs/msg/String \
   "{data: 'give5'}"
 ```
 
+![](./Images/Presentation/simulation_ubuntu_ros2.png) 
+
 Both supplied motions must run in RViz. Next, create `src/social_robot_behaviors/motions/<motion_name>.yaml` by copying the structure of `handshake.yaml` or `give5.yaml` and translating the social motion from the first laboratory session. For example:
 
 ```bash
 cd ~/UR5e_social_robotics/src/social_robot_behaviors/motions
 cp handshake.yaml wave.yaml
-code wave.yaml
+```
+Now modify the yaml file with the desired poses to describe the social movement, and compile again:
+
+```bash
 cd ~/UR5e_social_robotics
-colcon build --symlink-install
+colcon build
 source install/setup.bash
 ```
 
@@ -312,14 +297,23 @@ The fake UR5e should run `handshake`, `give5`, and your own social motion in RVi
 
 If a node cannot find the others, run `source ~/.bashrc` in that terminal and check that all five terminals have the same values for `ROS_DOMAIN_ID`, `ROS_LOCALHOST_ONLY`, and `RMW_IMPLEMENTATION`. Stop all nodes with `Ctrl+C` when finished.
 
-### Evidence for Session 2
+## Advantages of ROS2 versus python-sockets
 
-- [ ] `git remote -v` shows my fork.
-- [ ] My `.bashrc` contains the reviewed ROS 2 and workspace setup.
-- [ ] The workspace builds successfully.
-- [ ] I verified `handshake` and `give5` in RViz.
-- [ ] I created and simulated my own social-motion YAML.
-- [ ] I have a screenshot of my motion in RViz or the error output to discuss in Session 2.
+- **Automatic discovery:** ROS 2 can find clients and servers on the network automatically. Python sockets require manually setting IP addresses and ports.
+
+- **Standard communication:** ROS 2 uses standard topics and services. Python sockets need a custom TCP protocol.
+
+- **Clear separation of responsibilities:** the client sends only the behaviour name, while the server loads and executes the corresponding YAML motion.
+
+- **Easy distributed architecture:** ROS 2 is designed to run nodes on different computers, such as student clients and a teacher server.
+
+- **Better debugging:** standard commands such as ros2 node list, ros2 topic list, and ros2 service list help inspect the system.
+
+- **Integration with robot tools:** ROS 2 works directly with the UR driver, MoveIt 2, and RViz.
+
+- **Scalability:** new clients, behaviours, sensors, or interfaces can be added without redesigning the communication protocol.
+
+- **Simulation before hardware:** the same ROS 2 architecture can be tested with fake hardware and then used with the real UR5e under teacher supervision.
 
 ## More information
 

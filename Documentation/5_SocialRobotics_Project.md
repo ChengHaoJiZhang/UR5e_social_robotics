@@ -113,19 +113,3 @@ Expected result: the motion completes with fake hardware and, after approval, on
 
 The practical guides contain the detailed safety and execution checklists.
 
-## Deliverables
-
-1. Python sockets YAML file.
-2. ROS 2 YAML file.
-3. Short description of the social meaning and selected poses.
-4. Evidence of successful simulation in both architectures.
-5. Evidence of supervised real-robot execution, when authorised.
-6. Brief comparison of the two architectures.
-
-The comparison should explain:
-
-- what the Student PC sends in each architecture;
-- where the YAML is stored;
-- how the Teacher PC controls access to the robot;
-- how errors and results are communicated;
-- what ROS 2 provides compared with the custom TCP protocol.

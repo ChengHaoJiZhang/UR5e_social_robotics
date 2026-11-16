@@ -54,68 +54,6 @@ the robot execution layer. The Python server does not need Docker to share
 this topology. Use the two control systems alternately, stopping the previous
 system before switching.
 
-### ROS 2 configuration and temporary domain changes
-
-[Docker Compose](Files/Docker/docker-compose.yaml) supplies the Teacher container
-with `ROS_DOMAIN_ID=0`, `ROS_LOCALHOST_ONLY=0` and
-`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`, using host networking. The
-[teacher multicast XML](Files/Docker/cyclonedds_teacher_multicast.xml) selects
-classroom interface `192.168.1.5` with multicast enabled. Student 1, 2, 3 and
-4 use domains `1`, `2`, `3` and `4` respectively. The Teacher selects the
-domain of exactly one Student PC before it starts ROS nodes, so the other
-Student PCs do not discover the Teacher nodes. Verify discovery on the actual
-classroom network.
-
-To connect the Teacher to Student 2, change the domain **inside every Teacher
-container terminal** before starting nodes:
-
-```bash
-ros2 daemon stop
-export ROS_DOMAIN_ID=2  # choose 1, 2, 3 or 4 to match the selected Student PC
-```
-
-Repeat the export in every participating terminal; restart any nodes that must
-join the new domain. The selected Student and Teacher must match. An export
-affects only that shell and future child processes, not running nodes, other
-terminals or Compose. New container terminals retain the Compose base value
-`0`. Do not add a permanent Student domain override to the Teacher container's
-`.bashrc`.
-
-### Verify communication before motion
-
-With the Python server listening, run on a Windows Student PC:
-
-```powershell
-Test-NetConnection 192.168.1.5 -Port 5000
-```
-
-For ROS 2, first test data exchange on two computers in the same domain:
-
-```bash
-# Teacher container
-ros2 run demo_nodes_cpp talker
-```
-
-```bash
-# Student PC
-ros2 run demo_nodes_cpp listener
-```
-
-After messages arrive, stop the demos and start the Sequence Server on the
-Teacher PC. Inspect it from the Student PC:
-
-```bash
-ros2 node list
-ros2 topic list
-ros2 service list
-ros2 service type /ur5e/run_sequence
-```
-
-Expect `ur5e_interfaces/srv/RunSequence`. Listing interfaces alone does not prove
-remote data exchange. Neither DDS testing nor service discovery requires
-External Control. Real motion requires the complete execution stack and the
-robot setup described in [UR5e setup](1_UR5e_setup.md).
-
 ## Teacher PC responsibilities
 
 The Teacher PC is the supervised execution point. It:
@@ -221,41 +159,6 @@ The ROS 2 motion format is different from the Python sockets format. The same po
 7. Transfer the validated file to the Teacher PC.
 8. Run the first real-robot execution under instructor supervision.
 9. Compare the simulated and real executions and record any difference.
-
-## Fake hardware and home testing
-
-ROS 2 motions must be tested with the fake UR5e before they are tested on the real robot:
-
-```bash
-cd ~/UR5e_social_robotics
-colcon build --symlink-install
-source install/setup.bash
-```
-
-Start the fake driver and MoveIt 2 in separate terminals:
-
-```bash
-ros2 launch ur_robot_driver ur_control.launch.py \
-  ur_type:=ur5e \
-  robot_ip:=<UR5E_IP> \
-  use_fake_hardware:=true \
-  launch_rviz:=false
-```
-
-```bash
-ros2 launch ur_moveit_config ur_moveit.launch.py \
-  ur_type:=ur5e \
-  launch_rviz:=true
-```
-
-Then test a sequence:
-
-```bash
-ros2 launch ur5e_robot_controller ur5e_pose_sequence.launch.py \
-  sequence_file:=handshake.yaml
-```
-
-The IP argument is retained by the launch configuration, but fake hardware does not connect to a physical robot.
 
 ## Safety and instructor validation
 

@@ -1,4 +1,4 @@
-# UR5e setup environment
+# UR5e setup ROS2 environment
 
 This document summarizes the necessary steps to work with UR based projecs:
 
