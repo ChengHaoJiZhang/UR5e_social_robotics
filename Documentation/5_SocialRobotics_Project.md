@@ -1,115 +1,342 @@
 # Social Robotics Project with the UR5e
 
-## Project objective
+## Objective
 
-Design one safe and understandable social motion, such as waving, greeting, giving five or pointing, and implement it with two architectures:
+Verify these motions in this order:
 
-1. Python sockets, RoboDK and URScript;
-2. ROS 2, inverse kinematics and the UR controller.
+1. `handshake`;
+2. `give5`;
+3. the new motion prepared at home (`<motion_name>`).
 
-Use equivalent poses in both implementations so that their communication and execution can be compared.
+First run the three motions in simulation. Then run them on the real UR5e in the same order.
 
-## Recommended reading order
+## Safety
 
-Before starting the practical sessions:
+- Real tests require instructor approval.
+- Keep the workspace clear and the emergency stop accessible.
+- Use low robot speed and check the TCP and payload.
+- Stop immediately if the real movement differs from the simulation.
 
-1. read [Classroom architecture](2_UR5e_Classroom_Architecture.md) for shared networking and Student domains `1`–`4`;
-2. read [Python sockets architecture](3_Python_Sockets_Architecture.md);
-3. read [ROS 2 architecture](4_ROS2_Architecture.md);
-4. review the sessions, responsibilities and deliverables in this document.
+## Session 1 - Python sockets
 
-During each session, follow its practical guide step by step:
+### Network
 
-- **Session 1:** [Python sockets execution guide](../Python_sockets_Robotic_project/1_Instructions_python_SocialRobotics_Project.md)
-- **Session 2:** [ROS 2 execution guide](../src/1_Instructions_ros2_SocialRobotics_Project.md)
+```text
+Student PC 1  192.168.1.15 --\
+Student PC 2  192.168.1.25 ---\
+Student PC 3  192.168.1.35 ----+-- TCP 5000 --> Teacher PC 192.168.1.5
+Student PC 4  192.168.1.45 ---/                    |
+                                                    | URScript, TCP 30002
+                                                    v
+Teacher robot interface 192.168.0.10 ----------> UR5e 192.168.0.20
+```
 
-After these sessions, the camera-driven extension is documented in
-[Dynamic handshake with Gemini2 and YOLO Pose](6_Dynamic_Handshake_with_3D_Vision.md).
+The Student PC sends the complete YAML file to `192.168.1.5:5000`. The Teacher server replies with `OK` or `ERROR`. Only the Teacher PC connects to the UR5e.
 
-The architecture documents explain **what the system contains and how it works**. The practical guides explain **which commands to execute and in which order**.
+### 1. Prepare the Student PC
 
-## Project overview
+Copy the new file to:
 
-| Session | Architecture | Student request | Robot execution |
-|---|---|---|---|
-| 1 | Python sockets | Complete YAML over TCP | RoboDK and/or URScript |
-| 2 | ROS 2 | Behavior name through a topic and service | IK and ROS 2 trajectory controller |
+```text
+Python_sockets_Robotic_project/motions/<motion_name>.yaml
+```
 
-Both architectures keep direct robot access on the Teacher PC and allow different user interfaces to request the same high-level behavior.
+Register it in `MOTIONS` in `behavior_manager_client.py`:
 
-Before each session, verify TCP or DDS communication using the classroom
-guide. Stop the previous control system before switching between sockets and ROS 2.
+```python
+MOTIONS = {
+    "init": "motions/init.yaml",
+    "handshake": "motions/handshake.yaml",
+    "give5": "motions/give5.yaml",
+    "<motion_name>": "motions/<motion_name>.yaml",
+}
+```
 
-## Before the laboratory
+In the Student PC `config.py`, always use:
 
-1. Choose the social meaning of the motion.
-2. Define safe initial, intermediate and final poses.
-3. Implement and validate the Python YAML with RoboDK.
-4. Implement and validate the ROS 2 YAML with fake hardware.
-5. Keep velocities conservative and movements easy to understand.
-6. Record any differences between the two implementations.
+```python
+SERVER_IP = "192.168.1.5"
+SERVER_PORT = 5000
+```
 
-No motion may be tested on the real UR5e before successful simulation and instructor approval.
+### 2. Simulation
 
-## Session 1 — Python sockets
+#### Teacher PC - start first
 
-The student creates and registers a YAML behavior, sends it to the Teacher PC through TCP and observes its execution and response.
+In the Teacher PC `config.py`, set:
 
-The main concepts are:
+```python
+EXECUTION_MODE = "simulation_only"
+```
 
-- custom client-server communication;
-- complete YAML transfer;
-- centralised validation and exclusive robot access;
-- conversion from YAML to RoboDK commands or URScript;
-- optional CLI, voice and face-and-voice inputs.
+Start the server:
 
-Expected result: the motion completes successfully in RoboDK and, after approval, on the real robot.
+```powershell
+cd UR5e_social_robotics\Python_sockets_Robotic_project
+python ur5e_motion_server.py
+```
 
-## Session 2 — ROS 2
+Keep this terminal running. RoboDK must open and the server must listen on `0.0.0.0:5000`.
 
-The student implements the equivalent YAML sequence in the ROS 2 workspace. The Student PC sends only the behavior name; the Teacher PC loads the installed YAML and executes it through ROS 2 services and controllers.
+#### Student PC - start second
 
-The main concepts are:
+Check the connection and the registered motions:
 
-- ROS 2 nodes, topics, services and actions;
-- standard discovery and inspection;
-- separation between command input and sequence execution;
-- inverse kinematics through MoveIt 2;
-- fake-hardware validation before real execution.
+```powershell
+Test-NetConnection 192.168.1.5 -Port 5000
+cd UR5e_social_robotics\Python_sockets_Robotic_project
+python motion_client.py --list
+```
 
-Expected result: the motion completes with fake hardware and, after approval, on the real UR5e.
+Send one motion at a time and wait for `OK: sequence executed`:
 
-## Responsibilities
+```powershell
+python motion_client.py handshake
+python motion_client.py give5
+python motion_client.py <motion_name>
+```
 
-### Student
+Check every movement in RoboDK. Stop the Teacher server after the three tests.
 
-- design and document the motion;
-- create both YAML implementations;
-- validate every pose in simulation;
-- follow the practical guides in order;
-- collect execution evidence and compare the architectures.
+### 3. Real UR5e
 
-### Teacher PC
+#### Teacher PC - start first
 
-- provide the supervised connection to the UR5e;
-- run the server, driver and robot-control components;
-- contain the approved ROS 2 YAML;
-- reject invalid or concurrent requests.
+Check the robot connection:
 
-### Instructor
+```powershell
+Test-NetConnection 192.168.0.20 -Port 30002
+```
 
-- review the simulated motion;
-- verify the robot configuration and clear workspace;
-- authorise and supervise real-robot execution.
+In the Teacher PC `config.py`, set:
 
-## Safety principles
+```python
+EXECUTION_MODE = "simulation_and_real"
+```
 
-- Test every motion completely in simulation first.
-- Start with conservative movement parameters and reduced robot speed.
-- Check the TCP, payload and work area before real execution.
-- Keep the emergency stop accessible.
-- Stop immediately if the physical motion differs from the approved test.
-- Do not treat voice or face recognition as a safety mechanism.
+Start the server again:
 
-The practical guides contain the detailed safety and execution checklists.
+```powershell
+cd UR5e_social_robotics\Python_sockets_Robotic_project
+python ur5e_motion_server.py
+```
 
+#### Student PC - start second
+
+With instructor approval, send one motion at a time:
+
+```powershell
+python motion_client.py handshake
+python motion_client.py give5
+python motion_client.py <motion_name>
+```
+
+## Session 2 - ROS 2
+
+### Network
+
+```text
+Student PC 1  192.168.1.15, ROS_DOMAIN_ID=1 --\
+Student PC 2  192.168.1.25, ROS_DOMAIN_ID=2 ---\
+Student PC 3  192.168.1.35, ROS_DOMAIN_ID=3 ----+-- ROS 2 DDS/RTPS over UDP
+Student PC 4  192.168.1.45, ROS_DOMAIN_ID=4 ---/    port 7400 base + domain offsets
+                                                        |
+                                                        v
+                                         Teacher PC 192.168.1.5
+                                         selected ROS_DOMAIN_ID=1, 2, 3 or 4
+                                                        |
+                                                        | UR driver / RTDE
+                                                        v
+Teacher robot interface 192.168.0.10 ----------> UR5e 192.168.0.20
+```
+
+ROS 2 DDS uses UDP multicast and domain-dependent RTPS ports starting from base port `7400`; it does not use one fixed application port. The Student publishes `/social_behavior` and calls `/ur5e/run_sequence` through the Behavior Manager. The Teacher runs the driver, MoveIt 2 and the sequence server.
+
+### 1. Configure ROS 2 multicast
+
+Use the domain that matches the selected group:
+
+| Student PC | Classroom IP | `ROS_DOMAIN_ID` |
+|---|---|---|
+| Student 1 | `192.168.1.15` | `1` |
+| Student 2 | `192.168.1.25` | `2` |
+| Student 3 | `192.168.1.35` | `3` |
+| Student 4 | `192.168.1.45` | `4` |
+
+#### Student PC `~/.bashrc`
+
+Add this block. Change `1` to `2`, `3` or `4` for the other groups:
+
+```bash
+source /opt/ros/humble/setup.bash
+if [ -f "$HOME/UR5e_social_robotics/install/setup.bash" ]; then
+    source "$HOME/UR5e_social_robotics/install/setup.bash"
+fi
+export ROS_DOMAIN_ID=1
+export ROS_LOCALHOST_ONLY=0
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+unset CYCLONEDDS_URI
+```
+
+#### Teacher container `~/.bashrc`
+
+The Teacher runs ROS 2 inside the Humble container. Add this block and use the same group number as the selected Student:
+
+```bash
+source /opt/ros/humble/setup.bash
+if [ -f "$HOME/UR5e_social_robotics/install/setup.bash" ]; then
+    source "$HOME/UR5e_social_robotics/install/setup.bash"
+fi
+export ROS_DOMAIN_ID=1
+export ROS_LOCALHOST_ONLY=0
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export CYCLONEDDS_URI=file:///root/UR5e_social_robotics/Documentation/Files/Docker/cyclonedds_teacher_multicast.xml
+```
+
+The Teacher XML must bind Cyclone DDS to `192.168.1.5`.
+
+Reload and verify on both computers:
+
+```bash
+source ~/.bashrc
+ros2 daemon stop
+echo "$ROS_DOMAIN_ID"
+echo "$ROS_LOCALHOST_ONLY"
+echo "$RMW_IMPLEMENTATION"
+echo "$CYCLONEDDS_URI"
+```
+
+### 2. Send `<motion_name>.yaml` to the Teacher PC
+
+On the Student PC, open:
+
+```bash
+nano ~/UR5e_social_robotics/Documentation/Files/Send_motion/send_social_motion.py
+```
+
+The default parameters are prepared for the laboratory. Check `PROFESSOR_IP`, `PROFESSOR_USER`, `LOCAL_FOLDER` and `REMOTE_FOLDER` before running it. `REMOTE_FOLDER` must point to the Teacher `install/social_robot_behaviors/share/social_robot_behaviors/motions/` directory.
+
+Run the copy tool:
+
+```bash
+cd ~/UR5e_social_robotics/Documentation/Files/Send_motion
+python3 send_social_motion.py
+```
+
+When asked for the filename, enter:
+
+```text
+<motion_name>.yaml
+```
+
+The script copies the YAML directly to the Teacher `install` directory. No build is required. Continue only after it prints `Fitxer copiat correctament.`
+
+### 3. Simulation with fake hardware
+
+#### Teacher PC - start first
+
+Open three terminals inside the Teacher container. Check that all use the selected group domain.
+
+Teacher terminal 1:
+
+```bash
+ros2 launch ur_robot_driver ur_control.launch.py \
+  ur_type:=ur5e robot_ip:=192.168.0.20 \
+  use_fake_hardware:=true launch_rviz:=false
+```
+
+Teacher terminal 2:
+
+```bash
+ros2 launch ur_moveit_config ur_moveit.launch.py \
+  ur_type:=ur5e launch_rviz:=true
+```
+
+Teacher terminal 3:
+
+```bash
+ros2 run ur5e_motion_server ur5e_sequence_server
+```
+
+Check that the server shows the installed directory containing `<motion_name>.yaml`.
+
+#### Student PC - start second
+
+Student terminal 1:
+
+```bash
+ros2 launch social_robot_behaviors social_behavior.launch.py
+```
+
+Student terminal 2: send one motion at a time:
+
+```bash
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: 'handshake'}"
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: 'give5'}"
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: '<motion_name>'}"
+```
+
+Check that every IK request and trajectory succeeds in RViz. Stop all fake-hardware nodes before the real test.
+
+### 4. Real UR5e
+
+#### Teacher PC - start first
+
+Check the robot connection:
+
+```bash
+ping -c 4 192.168.0.20
+```
+
+Teacher terminal 1:
+
+```bash
+ros2 launch ur_robot_driver ur_control.launch.py \
+  ur_type:=ur5e robot_ip:=192.168.0.20 \
+  use_fake_hardware:=false launch_rviz:=false
+```
+
+On the teach pendant, load the program containing **External Control** and press **Play**.
+
+Teacher terminal 2:
+
+```bash
+ros2 launch ur_moveit_config ur_moveit.launch.py \
+  ur_type:=ur5e launch_rviz:=true
+```
+
+Teacher terminal 3:
+
+```bash
+ros2 run ur5e_motion_server ur5e_sequence_server
+```
+
+#### Student PC - start second
+
+Student terminal 1:
+
+```bash
+ros2 launch social_robot_behaviors social_behavior.launch.py
+```
+
+Student terminal 2: with instructor approval, send one motion at a time:
+
+```bash
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: 'handshake'}"
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: 'give5'}"
+ros2 topic pub --once /social_behavior std_msgs/msg/String \
+  "{data: '<motion_name>'}"
+```
+
+## Next session
+
+In the next session, we will create a more social HRI demonstration using face recognition and voice commands. See [Face and Voice HRI Demo with ROS 2](6_Face_and_Voice_HRI_ROS2_Demo.md). The following guide adds the experimental [Gesture HRI with YOLO Pose and a 3D Camera](7_Gesture_HRI_with_YOLO_Pose_and_3D_Camera.md).
+
+## Results
+
+For each motion, record the simulation result, the real-robot result, any error or protective stop, and the main difference between both executions.
