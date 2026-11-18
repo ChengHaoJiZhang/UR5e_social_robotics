@@ -16,7 +16,7 @@ The face is checked once when the HRI system starts. After authorisation, voice 
 ```text
 Teacher PC - HRI client and robot server
 
-camera -> face verification ---------------------------+
+Orbbec RGB topic -> face verification -----------------+
                                                        |
 microphone -> speech recognition -> keyword "robot"   |
                               -> /social_behavior/request
@@ -40,7 +40,7 @@ Face and voice recognition are interaction tools. They are not robot safety syst
 
 ## Before starting
 
-Everything is already installed and built. Do not install packages or rebuild the workspace.
+The ROS 2 workspace and Orbbec driver are assumed to be installed. Rebuild only the HRI package as shown below so its Python executables use the virtual environment.
 
 The `.venv-humble` environment must already be prepared as explained in [UR5e ROS 2 setup](Files/References/UR5e_ROS2_Setup.md). All Teacher terminals must use the same `ROS_DOMAIN_ID`.
 
@@ -60,7 +60,18 @@ The example reference image is:
 
 ## 1. Prepare every terminal
 
-Run this in every Teacher container terminal:
+In one Teacher container terminal, build the HRI package with the virtual environment's Python:
+
+```bash
+cd /root/UR5e_social_robotics
+source /opt/ros/humble/setup.bash
+.venv-humble/bin/python -m colcon build --packages-select social_robot_hri
+head -n 1 install/social_robot_hri/lib/social_robot_hri/{voice_node,face_verification_node}
+```
+
+Both executable headers should point to `/root/UR5e_social_robotics/.venv-humble/bin/python`. Activating the virtual environment alone does not change the interpreter recorded in previously built executables.
+
+Then run this in every Teacher container terminal:
 
 ```bash
 cd /root/UR5e_social_robotics
@@ -74,6 +85,25 @@ Verify that every terminal uses the same domain:
 ```bash
 echo "$ROS_DOMAIN_ID"
 ```
+
+### Start the Orbbec Gemini 2
+
+In a dedicated Teacher container terminal, start the camera driver and leave it running for both the fake-hardware test and the real-robot demo:
+
+```bash
+ros2 launch orbbec_camera gemini2.launch.py \
+  color_width:=640 color_height:=480 color_fps:=15 \
+  depth_width:=640 depth_height:=400 depth_fps:=15 \
+  depth_registration:=true enable_point_cloud:=false enable_ir:=false
+```
+
+From another prepared terminal, check that the RGB topic is publishing frames:
+
+```bash
+ros2 topic hz /camera/color/image_raw
+```
+
+Once a rate is shown, press Ctrl+C to stop the topic check. The HRI face verification node subscribes to this RGB topic through the `image_topic` launch argument.
 
 ## 2. Test with fake hardware
 
@@ -115,7 +145,7 @@ Teacher terminal 6:
 ```bash
 ros2 launch social_robot_hri face_voice_hri.launch.py \
   reference_image:=$HOME/UR5e_social_robotics/Python_sockets_Robotic_project/resources/Pictures/authorised_user.png \
-  camera_index:=0
+  image_topic:=/camera/color/image_raw
 ```
 
 ## 3. Verify the face gate
@@ -126,7 +156,7 @@ ros2 launch social_robot_hri face_voice_hri.launch.py \
 4. Check that the window shows `AUTHORISED`.
 5. Check that the terminal reports `User authorised. HRI requests are enabled.`
 
-Press `Q` to cancel if the wrong camera is open. Change `camera_index` only if the Teacher PC uses another camera.
+Press `Q` in the verification window to cancel. To use a local OpenCV camera instead of the Orbbec ROS topic, omit `image_topic` and pass the appropriate `camera_index`.
 
 ## 4. Verify voice control
 
@@ -169,7 +199,7 @@ The expected behavior is `give5`.
 
 ## 5. Execute on the real UR5e
 
-Stop all fake-hardware nodes. Continue only with instructor approval.
+Stop the fake robot and HRI nodes. Keep the Orbbec camera driver running. Continue only with instructor approval.
 
 Teacher terminal 1:
 
@@ -205,7 +235,7 @@ Teacher terminal 5 - restart face and voice control:
 ```bash
 ros2 launch social_robot_hri face_voice_hri.launch.py \
   reference_image:=$HOME/UR5e_social_robotics/Python_sockets_Robotic_project/resources/Pictures/authorised_user.png \
-  camera_index:=0
+  image_topic:=/camera/color/image_raw
 ```
 
 After the authorised face is accepted, say one command at a time:
