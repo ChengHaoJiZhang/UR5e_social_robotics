@@ -42,7 +42,7 @@ Face and voice recognition are interaction tools. They are not robot safety syst
 
 Everything is already installed and built. Do not install packages or rebuild the workspace.
 
-The `.venv-humble` environment must already be prepared as explained in [UR5e ROS 2 setup](1_UR5e_ROS2_setup.md). All Teacher terminals must use the same `ROS_DOMAIN_ID`.
+The `.venv-humble` environment must already be prepared as explained in [UR5e ROS 2 setup](Files/References/UR5e_ROS2_Setup.md). All Teacher terminals must use the same `ROS_DOMAIN_ID`.
 
 Check these items:
 
@@ -130,6 +130,14 @@ Press `Q` to cancel if the wrong camera is open. Change `camera_index` only if t
 
 ## 4. Verify voice control
 
+With fake hardware running, you can test the voice interpreter without
+speaking into the microphone. After authorisation, run this in a separate
+terminal and check that `/social_behavior` receives `handshake`.
+
+```bash
+ros2 topic pub --once /voice/text std_msgs/msg/String "{data: 'robot handshake'}"
+```
+
 The activation word must be the first word. Say:
 
 ```text
@@ -213,4 +221,4 @@ Wait until one motion finishes before saying the next command. Stop the experime
 
 This demo can be extended with AI-based gesture identification using YOLO Pose and a 3D camera. A person could offer a hand instead of speaking.
 
-The next guide, [Gesture HRI with YOLO Pose and a 3D Camera](7_Gesture_HRI_with_YOLO_Pose_and_3D_Camera.md), describes the current experimental design and launch commands. The complete gesture nodes are not finished or validated yet.
+The next guide, [Gesture HRI with YOLO Pose and a 3D Camera](5_Gesture_HRI_with_YOLO_Pose_and_3D_Camera.md), describes the current experimental design and launch commands. The complete gesture nodes are not finished or validated yet.
