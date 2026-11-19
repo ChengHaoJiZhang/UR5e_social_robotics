@@ -95,6 +95,7 @@ source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
 if [ -f ~/UR5e_social_robotics/install/setup.bash ]; then
     source ~/UR5e_social_robotics/install/setup.bash
 fi
+cd UR5e_social_robotics
 export ROS_DOMAIN_ID=1 # Use the group number you want to control ur5e
 export ROS_LOCALHOST_ONLY=0
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp

@@ -40,7 +40,7 @@ Face and voice recognition are interaction tools. They are not robot safety syst
 
 ## Before starting
 
-The ROS 2 workspace and Orbbec driver are assumed to be installed. Rebuild only the HRI package as shown below so its Python executables use the virtual environment.
+The ROS 2 workspace and Orbbec driver are assumed to be installed. Rebuild the HRI and behavior packages as shown below so their Python executables use the virtual environment. Restart the Behavior Manager after building.
 
 The `.venv-humble` environment must already be prepared as explained in [UR5e ROS 2 setup](Files/References/UR5e_ROS2_Setup.md). All Teacher terminals must use the same `ROS_DOMAIN_ID`.
 
@@ -52,10 +52,10 @@ Check these items:
 - the motions were already approved with fake hardware;
 - no Python socket server is running.
 
-The example reference image is:
+Place the authorised user’s photo in `Documentation/Files/Camera&Microphone` and pass its filename as `authorised_user`. The example image is:
 
 ```text
-~/UR5e_social_robotics/Python_sockets_Robotic_project/resources/Pictures/authorised_user.png
+~/UR5e_social_robotics/Documentation/Files/Camera&Microphone/Manel.png
 ```
 
 ## 1. Prepare every terminal
@@ -65,7 +65,7 @@ In one Teacher container terminal, build the HRI package with the virtual enviro
 ```bash
 cd /root/UR5e_social_robotics
 source /opt/ros/humble/setup.bash
-.venv-humble/bin/python -m colcon build --packages-select social_robot_hri
+.venv-humble/bin/python -m colcon build --packages-select social_robot_hri social_robot_behaviors
 head -n 1 install/social_robot_hri/lib/social_robot_hri/{voice_node,face_verification_node}
 ```
 
@@ -87,6 +87,8 @@ echo "$ROS_DOMAIN_ID"
 ```
 
 ### Start the Orbbec Gemini 2
+
+For driver installation, see the [Orbbec Gemini 2 installation guide](Files/Camera%26Microphone/Gemini2_installation.md).
 
 In a dedicated Teacher container terminal, start the camera driver and leave it running for both the fake-hardware test and the real-robot demo:
 
@@ -140,12 +142,31 @@ Teacher terminal 5:
 ros2 topic echo /social_behavior
 ```
 
-Teacher terminal 6:
+Before starting the HRI launch, run `ros2 topic info /social_behavior/result`
+in a prepared terminal and verify that `Publisher count` is `1`. If it is
+`0`, restart the Behavior Manager after sourcing `install/setup.bash`.
+
+### Check the microphone
+
+In Teacher terminal 6, from the repository root, list the microphones and
+test the Jabra. Replace `6` with the index shown next to `Jabra SPEAK 510 USB`.
+
+```bash
+python "Documentation/Files/Camera&Microphone/voice_transcription_node.py" --list-mics
+python "Documentation/Files/Camera&Microphone/voice_transcription_node.py" --mic 6
+```
+
+At `Listening...`, say **robot give me five** and check the `Transcription:`
+line. Press Ctrl+C to release the microphone, then launch the demo in the same
+terminal. The default index is `6`. Use the index you just tested if it differs.
 
 ```bash
 ros2 launch social_robot_hri face_voice_hri.launch.py \
-  reference_image:=$HOME/UR5e_social_robotics/Python_sockets_Robotic_project/resources/Pictures/authorised_user.png \
-  image_topic:=/camera/color/image_raw
+  authorised_user:=Manel.png \
+  image_topic:=/camera/color/image_raw \
+  microphone_index:=6 \
+  speaker_device:=plughw:CARD=USB,DEV=0 \
+  speech_voice:=en-gb
 ```
 
 ## 3. Verify the face gate
@@ -195,7 +216,25 @@ Then test:
 robot give me five
 ```
 
-The expected behavior is `give5`.
+The expected behavior is `give5`. You can also say “robot high five”. The Teacher PC uses `espeak-ng` to announce
+the face verification result and each command. Start unrecognised command
+attempts with “robot” to hear “I have not understood”. During a sequence, new
+motion commands and speech feedback are suppressed. When the sequence returns,
+the node says “Manel, I am listening” once, using the name from the photo filename.
+Use `speech_voice:=en-gb` in the launch command to try British pronunciation.
+If verification is cancelled with `Q` before a match, it announces that the
+person is unauthorised.
+
+If the prompts are silent, use `aplay -l` inside the Teacher container to find
+the playback device. Install `alsa-utils` if `aplay` is missing. For a Jabra listed
+as card `USB`, device `0`, test playback with:
+
+```bash
+espeak-ng --stdout 'Hello Manel' | aplay -D 'plughw:CARD=USB,DEV=0'
+```
+
+Once audible, append `speaker_device:=plughw:CARD=USB,DEV=0` to the launch
+command. The speaker device is independent of `microphone_index`.
 
 ## 5. Execute on the real UR5e
 
@@ -234,8 +273,9 @@ Teacher terminal 5 - restart face and voice control:
 
 ```bash
 ros2 launch social_robot_hri face_voice_hri.launch.py \
-  reference_image:=$HOME/UR5e_social_robotics/Python_sockets_Robotic_project/resources/Pictures/authorised_user.png \
-  image_topic:=/camera/color/image_raw
+  authorised_user:=Manel.png \
+  image_topic:=/camera/color/image_raw \
+  microphone_index:=6
 ```
 
 After the authorised face is accepted, say one command at a time:

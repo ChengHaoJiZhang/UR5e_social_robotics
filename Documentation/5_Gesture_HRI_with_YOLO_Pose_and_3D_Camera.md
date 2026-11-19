@@ -6,7 +6,7 @@ This is an experimental guide. The gesture nodes are not finished or validated.
 
 Use the current nodes only with perception data, fake hardware and planning mode. Do not execute gesture-driven motions on the real UR5e.
 
-All software is already installed. Installation, `.venv-humble`, Gemini2 and Ultralytics are explained in [UR5e ROS 2 setup](Files/References/UR5e_ROS2_Setup.md) and are not repeated here.
+All software is already installed. See [UR5e ROS 2 setup](Files/References/UR5e_ROS2_Setup.md) for the workspace, `.venv-humble` and Ultralytics. For the camera driver, see the [Orbbec Gemini 2 installation guide](Files/Camera%26Microphone/Gemini2_installation.md).
 
 The Teacher PC acts as both HRI client and robot server. It runs the camera, perception, gesture, behavior, MoveIt 2 and robot-control nodes. No Student PC is used because the person must stand in front of the robot, camera and audio equipment.
 

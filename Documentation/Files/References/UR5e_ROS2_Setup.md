@@ -94,11 +94,7 @@ not change the interpreter used by `/usr/bin/colcon`.
 cd ~/UR5e_social_robotics
 source /opt/ros/humble/setup.bash
 source .venv-humble/bin/activate
-
-.venv-humble/bin/python /usr/bin/colcon build \
-    --symlink-install \
-    --base-paths src
-
+.venv-humble/bin/python colcon build
 source install/setup.bash
 ```
 

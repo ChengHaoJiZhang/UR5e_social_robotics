@@ -12,6 +12,8 @@ from rclpy.qos import QoSPresetProfiles
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 
+from .speech_feedback import UNRECOGNISED_TOPIC, speak
+
 
 class FaceVerifier:
     """Compare camera faces with one reference image."""
@@ -76,7 +78,7 @@ class FaceVerifier:
 class FaceVerificationNode(Node):
     def __init__(self):
         super().__init__('face_verification_node')
-        self.declare_parameter('reference_image', '')
+        self.declare_parameter('authorised_user', '')
         self.declare_parameter('camera_index', 0)
         self.declare_parameter('image_topic', '')
         self.declare_parameter('tolerance', 0.6)
@@ -84,9 +86,14 @@ class FaceVerificationNode(Node):
         self.declare_parameter('output_topic', '/social_behavior')
 
     def verify_user(self):
-        reference_image = str(self.get_parameter('reference_image').value)
-        if not reference_image:
-            raise RuntimeError('Set the reference_image ROS parameter.')
+        authorised_user = self.get_parameter('authorised_user').value
+        if not authorised_user or Path(authorised_user).name != authorised_user:
+            raise ValueError('Set authorised_user to an image filename, such as Manel.png.')
+
+        reference_image = (
+            Path.home() / 'UR5e_social_robotics' / 'Documentation' / 'Files'
+            / 'Camera&Microphone' / authorised_user
+        )
 
         verifier = FaceVerifier(
             reference_image,
@@ -107,10 +114,20 @@ class FaceVerificationNode(Node):
         else:
             self.authorised = verifier.verify()
 
+        self.authorised_name = Path(authorised_user).stem
         if not self.authorised:
             self.get_logger().error('Face verification failed. Requests are blocked.')
+            speak(self, f'I am sorry, you are not the authorised user {self.authorised_name}')
         else:
+            speak(self, f'Hello {self.authorised_name}')
             self.get_logger().info('User authorised. HRI requests are enabled.')
+            self.pending_behaviors = {}
+            self.feedback_subscription = self.create_subscription(
+                String, UNRECOGNISED_TOPIC, self.unrecognised_callback, 10
+            )
+            self.result_subscription = self.create_subscription(
+                String, '/social_behavior/result', self.result_callback, 10
+            )
 
         self.publisher_ = self.create_publisher(
             String, str(self.get_parameter('output_topic').value), 10
@@ -151,8 +168,38 @@ class FaceVerificationNode(Node):
         if not self.authorised:
             self.get_logger().warn('Rejected behavior request: user not authorised.')
             return
+        command = msg.data.strip()
+        if self.pending_behaviors and command != 'stop':
+            self.get_logger().info(f'Ignored {command} while a sequence is in progress.')
+            return
+        if not self.count_publishers('/social_behavior/result'):
+            self.get_logger().warning(
+                'No publisher on /social_behavior/result. Restart the updated '
+                'social_robot_behaviors node before sending motion commands.'
+            )
+            if command == 'stop':
+                self.publisher_.publish(msg)
+            return
+        if command != 'stop':
+            speak(self, f'I will start {command}')
+        self.pending_behaviors[command] = self.pending_behaviors.get(command, 0) + 1
         self.publisher_.publish(msg)
-        self.get_logger().info(f'Authorised behavior: {msg.data}')
+        self.get_logger().info(f'Authorised behavior: {command}')
+
+    def unrecognised_callback(self, _msg):
+        if not self.pending_behaviors:
+            speak(self, 'I have not understood')
+
+    def result_callback(self, msg):
+        count = self.pending_behaviors.get(msg.data, 0)
+        if count == 0:
+            return
+        if count == 1:
+            del self.pending_behaviors[msg.data]
+        else:
+            self.pending_behaviors[msg.data] = count - 1
+        if not self.pending_behaviors:
+            speak(self, f'{self.authorised_name}, I am listening')
 
 
 def main(args=None):
@@ -165,7 +212,7 @@ def main(args=None):
             rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-    except (RuntimeError, FileNotFoundError) as error:
+    except (RuntimeError, FileNotFoundError, ValueError) as error:
         print(f'[FACE] {error}')
     finally:
         if node is not None:
