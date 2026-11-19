@@ -70,21 +70,35 @@ unset CYCLONEDDS_URI
 ### Teacher container
 
 Start the Humble container following the [Docker guide](Files/Docker/UB_Custom_Docker_container_ur5e.md).
-Check the host repository path in `docker-compose.yaml` and enable X11 on the
-Teacher host using that guide. Compose sets Cyclone DDS and classroom discovery.
+
+Check the host repository path in `docker-compose.yaml` and enable X11 on the Teacher host using that guide. 
+
+Compose sets Cyclone DDS and classroom discovery.
 Its Cyclone DDS XML selects the classroom interface `192.168.1.5`.
 
-After choosing the group, stop the ROS daemon and set the matching domain in
-each Teacher terminal you open for the session:
+All these requirements are done with:
 
 ```bash
-ros2 daemon stop
-export ROS_DOMAIN_ID=1  # replace 1 with the selected Student group
+cd ~/Desktop/UR5e_social_robotics/Documentation/Files/Docker
+xhost +local:root # Host Ubuntu to allow X11 for Docker
+chmod +x entrypoint_pc.sh
+docker compose up -d
 ```
 
-On the Student PC, reload with `source ~/.bashrc` and run `ros2 daemon stop`.
-On both PCs, check `ROS_DOMAIN_ID`, `ROS_LOCALHOST_ONLY` and
-`RMW_IMPLEMENTATION` before launching any nodes.
+Add in `.bashrc` the lines:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
+# Activate the venv-humble only if it is necessary
+#source ~/UR5e_social_robotics/.venv-humble/bin/activate
+if [ -f ~/UR5e_social_robotics/install/setup.bash ]; then
+    source ~/UR5e_social_robotics/install/setup.bash
+fi
+export ROS_DOMAIN_ID=1 # Use the group number you want to control ur5e
+export ROS_LOCALHOST_ONLY=0
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+```
 
 ## 2. Send `<motion_name>.yaml` to the Teacher PC
 
