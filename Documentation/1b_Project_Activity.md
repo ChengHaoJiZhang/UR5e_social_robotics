@@ -53,7 +53,48 @@ cd /home/user/UR5e_social_robotics
 colcon build
 ```
 
-### 4. Verify the examples and create your motion
+
+## 4. Define your social movement
+
+Copy `handshake.yaml` from [the example motions](../src/social_robot_behaviors/motions/)
+to `src/social_robot_behaviors/motions/<motion_name>.yaml`. Use a lowercase name
+without spaces. ROS 2 looks up the filename using the requested motion name,
+without the `.yaml` extension.
+
+A motion file has a `common` settings block and an ordered `steps` list. This
+single-step example uses the opening pose from `handshake.yaml`.
+
+```yaml
+common:
+  execute: true
+  group_name: ur_manipulator
+  ik_link: tool0
+  target_frame: table
+  planning_frame: base_link
+  max_velocity: 0.1
+  max_acceleration: 0.1
+  ik_timeout_sec: 1.0
+  print_joints: true
+
+steps:
+  - name: home_start
+    target_xyz: [0, -400, 500]
+    target_rpy: [90.0, 0.0, 0.0]
+    seed_from_joint_states: false
+    seed_joints: [-60, -60, -100, 170, -60, 0]
+    duration: 4.0
+    sleep_after: 1.0
+```
+
+- `target_xyz` is the position in millimetres in `target_frame`, normally `table`.
+- `target_rpy` is roll, pitch and yaw in degrees.
+- `duration` is the movement time in seconds. Optional `sleep_after` is the pause in seconds.
+- `seed_from_joint_states: true` uses the current joint state as the starting point for inverse kinematics. When supplying `seed_joints`, give six joint angles in degrees.
+
+Add the intermediate and final poses under `steps`. Keep the start and end
+configurations safe and verify each step in simulation. 
+
+### 4. Verify the examples and your social movement
 
 Open **five VS Code terminals**. Then start one process in each terminal.
 
@@ -107,9 +148,9 @@ ros2 topic pub --once /social_behavior std_msgs/msg/String "{data: 'wave'}"
 
 Replace `wave` with your own name.
 
-Insert the video of simulated motion here!
+**Insert the video of simulated motion here!**
 
-### 5. Delivery
+### 6. Delivery
 
 Update the Director's group GitHub repository with:
 
