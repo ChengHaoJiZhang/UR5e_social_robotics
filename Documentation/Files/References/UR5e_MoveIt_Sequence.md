@@ -115,36 +115,28 @@ ros2 launch ur_moveit_config ur_moveit.launch.py \
 
 Wait until the driver, MoveIt and RViz are ready.
 
-**Terminal 3 — table transform:** If another process already publishes the
-`base_link` to `table` transform, keep it and skip this command. Do not run
-two publishers for the same transform. Otherwise, use the same transform as
-the existing sequence launch:
-
-```bash
-ros2 run tf2_ros static_transform_publisher \
-  0.0 0.0 0.0 0.0 0.0 1.0 0.0 base_link table
-```
-
-This is a 180-degree rotation around the vertical axis. It defines a frame,
-not a physical table in the MoveIt planning scene.
+The sequence launch in step 6 publishes the `base_link` to `table` transform,
+using the same 180-degree rotation around the vertical axis as the existing
+sequence launch. Stop any other publisher of this transform before starting
+the new launch. The transform defines a frame, not a physical table in the
+MoveIt planning scene.
 
 ## 5. Check the interfaces
 
-In **terminal 4**, prepare the environment as above and run:
+In **terminal 3**, prepare the environment as above and run:
 
 ```bash
 ros2 topic echo /joint_states --once
 ros2 action list | grep -E '^/(move_action|execute_trajectory)$'
-ros2 run tf2_ros tf2_echo base_link table
 ```
 
 The first command should show joint names and positions; the second should
-show both actions. The third should show the transform; stop it with Ctrl+C.
-If an interface is missing, check the earlier terminals and the ROS domain.
+show both actions. If an interface is missing, check the earlier terminals and
+the ROS domain. The `table` transform will appear when the sequence launch runs.
 
 ## 6. Plan without moving
 
-In **terminal 4**, run:
+In **terminal 3**, run:
 
 ```bash
 ros2 launch ur5e_robot_controller ur5e_pose_sequence_moveit.launch.py \
@@ -158,6 +150,10 @@ path visualization before launching the command; watch the planned sequence as
 the node publishes it. Run the command again if RViz was not ready in time.
 The launch reads the installed YAML from `social_robot_behaviors`, not an
 arbitrary path. Rebuild or install YAML changes before testing them.
+
+To inspect the transform while the launch is running, prepare another terminal
+and run `ros2 run tf2_ros tf2_echo base_link table`. Stop this check with
+Ctrl+C. The transform publisher exits when you stop the sequence launch.
 
 ## 7. Execute with fake hardware
 
