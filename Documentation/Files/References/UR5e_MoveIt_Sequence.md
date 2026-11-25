@@ -81,7 +81,8 @@ source install/setup.bash
 ros2 pkg executables ur5e_robot_controller
 ```
 
-Check that the output includes `ur5e_pose_sequence_moveit_exe`. If the
+Check that the output includes `ur5e_pose_sequence_moveit_exe` and
+`ur5e_test_scene_exe`. If the
 workspace or dependencies are not yet prepared, follow the setup guide first.
 Use the same ROS domain and network settings in every terminal; see
 [Session 2](../../4a_ROS2_Session.md) for the classroom settings.
@@ -115,7 +116,7 @@ ros2 launch ur_moveit_config ur_moveit.launch.py \
 
 Wait until the driver, MoveIt and RViz are ready.
 
-The sequence launch in step 6 publishes the `base_link` to `table` transform,
+The sequence launch in section 7 publishes the `base_link` to `table` transform,
 using the same 180-degree rotation around the vertical axis as the existing
 sequence launch. Stop any other publisher of this transform before starting
 the new launch. The transform defines a frame, not a physical table in the
@@ -134,9 +135,50 @@ The first command should show joint names and positions; the second should
 show both actions. If an interface is missing, check the earlier terminals and
 the ROS domain. The `table` transform will appear when the sequence launch runs.
 
-## 6. Plan without moving
+## 6. Add the test table
 
-In **terminal 3**, run:
+The separate `ur5e_test_scene` node adds one collision object to MoveIt's
+planning scene. It does not change the robot's URDF, the sequence server, or
+the existing classroom launches. The box is 1 m by 1 m and 0.05 m thick.
+Its centre is `(0, 0, -0.025)` in `base_link`, so its top is at `z = 0`.
+This assumes that `base_link` is at the table surface: check this assumption
+against the model and the real installation before any real robot test.
+
+The planning scene belongs to the running MoveIt instance. All clients of
+that instance can see this table. Do not run this test while a class is using
+the same MoveIt instance. It is not started by any classroom launch.
+
+In **terminal 3**, with the environment prepared as in section 4, run:
+
+```bash
+ros2 run ur5e_robot_controller ur5e_test_scene_exe
+```
+
+Wait for `Added ur5e_test_scene_table`. Keep this terminal open while testing.
+In RViz, check that the MotionPlanning display shows scene geometry and that
+the table is centred under the robot. Check that the robot's starting pose and
+the targets are not in collision with the box. Contact or overlap with the
+robot base can cause planning to fail; do not change collision permissions
+without inspecting the geometry.
+
+When you finish testing, press Ctrl+C in terminal 3 **while MoveIt is still
+running**. The node requests removal of only `ur5e_test_scene_table` and
+reports whether it succeeded. Check that the table disappears from RViz.
+If the node is killed unexpectedly, or removal fails, restart MoveIt or, with
+MoveIt running and no test scene node active, remove the stale test table:
+
+```bash
+ros2 run ur5e_robot_controller ur5e_test_scene_exe --ros-args -p remove_only:=true
+```
+
+This command removes only the object with that ID. The node refuses to replace
+an existing object with the same ID when it starts normally. Do not use the
+cleanup command while another test scene node is active.
+
+## 7. Plan without moving
+
+Keep terminal 3 running. Open **terminal 4**, prepare its environment as in
+section 4, and run:
 
 ```bash
 ros2 launch ur5e_robot_controller ur5e_pose_sequence_moveit.launch.py \
@@ -155,7 +197,7 @@ To inspect the transform while the launch is running, prepare another terminal
 and run `ros2 run tf2_ros tf2_echo base_link table`. Stop this check with
 Ctrl+C. The transform publisher exits when you stop the sequence launch.
 
-## 7. Execute with fake hardware
+## 8. Execute with fake hardware
 
 After reviewing the preview, use the same terminal:
 
@@ -171,11 +213,11 @@ or execution fails, the node reports an error and stops; inspect the terminal
 and MoveIt logs before retrying. Stop the launched processes with Ctrl+C when
 you finish.
 
-## 8. What the planner can and cannot see
+## 9. What the planner can and cannot see
 
 MoveIt checks the robot model and objects present in its planning scene. The
 `table` TF frame does not add a table collision object. Objects that are not
-modelled cannot be avoided by the planner. This example does not add a table
-or a test box, detect moving people, or guarantee avoidance of singularities.
+modelled cannot be avoided by the planner. The optional test scene adds only
+the table. It does not detect moving people or guarantee avoidance of singularities.
 A preview and low speed do not replace the safety measures required for a
 real robot; start with fake hardware.
