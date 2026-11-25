@@ -6,7 +6,6 @@ import time
 
 import rclpy
 from rclpy.action import ActionClient
-from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import Pose, PoseStamped
@@ -82,7 +81,22 @@ class PlannedSequence(Node):
         pose.pose.position.x, pose.pose.position.y, pose.pose.position.z = [float(v) / 1000.0 for v in xyz]
         q = quat_from_rpy_zyx(*[math.radians(float(v)) for v in rpy])
         pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w = q
-        transform = self.tf_buffer.lookup_transform(self.planning_frame, self.target_frame, rclpy.time.Time(), timeout=Duration(seconds=2.0))
+        # Process TF callbacks while waiting; a blocking lookup on this thread
+        # would prevent the listener from receiving the transform it needs.
+        deadline = time.monotonic() + 10.0
+        while rclpy.ok() and time.monotonic() < deadline:
+            if self.tf_buffer.can_transform(
+                self.planning_frame, self.target_frame, rclpy.time.Time()
+            ):
+                break
+            rclpy.spin_once(self, timeout_sec=0.1)
+        else:
+            raise RuntimeError(
+                f'TF unavailable: {self.planning_frame} <- {self.target_frame}'
+            )
+        transform = self.tf_buffer.lookup_transform(
+            self.planning_frame, self.target_frame, rclpy.time.Time()
+        )
         pose.pose = tf2_geometry_msgs.do_transform_pose(pose.pose, transform)
         pose.header.frame_id = self.planning_frame
         return pose
