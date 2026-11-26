@@ -1,0 +1,82 @@
+
+sequence_name: six_seven
+
+steps:
+  - name: home_start
+    motion: moveJ
+    joints_deg: [-60, -65, -100, 170, -60, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 4.0
+    blend: 0.0
+
+  - name: approach
+    motion: moveL
+    target_xyz_mm: [-300, -300, 300]
+    target_rpy_deg: [0, -90, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 3.0
+    blend: 0.0
+
+  - name: six_1
+    motion: moveL
+    target_xyz_mm: [-300, -300, 400]
+    target_rpy_deg: [0, -90, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 2.0
+    blend: 0.0
+
+  - name: seven_1
+    motion: moveL
+    target_xyz_mm: [-300, -300, 300]
+    target_rpy_deg: [0, -90, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 2.0
+    blend: 0.0
+
+  - name: six_2
+    motion: moveL
+    target_xyz_mm: [-300, -300, 400]
+    target_rpy_deg: [0, -90, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 2.0
+    blend: 0.0
+
+  - name: seven_2
+    motion: moveL
+    target_xyz_mm: [-300, -300, 300]
+    target_rpy_deg: [0, -90, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 2.0
+    blend: 0.0
+
+  - name: six_3
+    motion: moveL
+    target_xyz_mm: [-300, -300, 400]
+    target_rpy_deg: [0, -90, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 2.0
+    blend: 0.0
+
+  - name: seven_3
+    motion: moveL
+    target_xyz_mm: [-300, -300, 300]
+    target_rpy_deg: [0, -90, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 2.0
+    blend: 0.0
+
+  - name: home_end
+    motion: moveJ
+    joints_deg: [-60, -65, -100, 170, -60, 0]
+    acceleration: 1.2
+    velocity: 0.67
+    time: 4.0
+    blend: 0.0
