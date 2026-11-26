@@ -1,6 +1,6 @@
 # config.py
 #When client&server are runing in the same computer SERVER_IP = "127.0.0.1" else SERVER_IP = "192.168.1.5"
-SERVER_IP = "127.0.0.1"
+SERVER_IP = "192.168.1.5"
 SERVER_PORT = 5000
 SERVER_CONNECT_TIMEOUT = 5.0
 MOTION_RESPONSE_TIMEOUT = 60.0
@@ -8,8 +8,8 @@ MOTION_RESPONSE_TIMEOUT = 60.0
 ROBOT_IP = "192.168.0.20"
 ROBOT_PORT = 30002
 
-# "simulation_only", "simulation_and_real" or "real_only"
-EXECUTION_MODE = "simulation_only"
+# "simulation_only", "simulation_and_real" or "real_only" simulation and real means it will do in the pc and real
+EXECUTION_MODE = "simulation"
 
 #RDK_FILE = "src/roboDK/Social_UR5e.rdk"
 
